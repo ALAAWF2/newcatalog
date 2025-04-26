@@ -16,6 +16,15 @@
     .product img { width: 100%; height: 150px; object-fit: contain; margin-bottom: 10px; border-radius: 8px; background-color: #fff0e0; }
     .order-btn { background: #e67e22; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; }
     .order-btn:hover { background: #cf711c; }
+
+    /* Modal Styles */
+    .modal {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5); justify-content: center; align-items: center;
+    }
+    .modal-content {
+      background: white; padding: 20px; border-radius: 10px; text-align: center; min-width: 300px;
+    }
   </style>
 </head>
 <body>
@@ -29,10 +38,21 @@
       <select id="categoryFilter"></select>
     </label>
     <input type="text" id="searchInput" placeholder="ابحث بالـ Alias..." oninput="renderProducts()" />
-    <button class="order-btn" onclick="openSubmitDialog()">ارسال الطلبية</button>
+    <button class="order-btn" onclick="openModal()">ارسال الطلبية</button>
   </div>
 
   <div class="products" id="productContainer"></div>
+
+  <!-- Modal -->
+  <div class="modal" id="orderModal">
+    <div class="modal-content">
+      <h3>اختر اسم المعرض</h3>
+      <select id="mallSelect" style="width: 90%;"></select>
+      <br><br>
+      <button onclick="submitOrder()" class="order-btn">تأكيد الطلبية</button>
+      <button onclick="closeModal()" class="order-btn" style="background: grey;">إلغاء</button>
+    </div>
+  </div>
 
   <script src="products.js"></script>
   <script>
@@ -41,6 +61,21 @@
     const warehouseFilter = document.getElementById('warehouseFilter');
     const categoryFilter = document.getElementById('categoryFilter');
     const productContainer = document.getElementById('productContainer');
+    const orderModal = document.getElementById('orderModal');
+    const mallSelect = document.getElementById('mallSelect');
+
+    const mallNames = [
+      "04-Andalos Mall", "05-Haifa Mall", "06-Red Sea Mall", "07-Arab Mall", "08-Makkah Mall", "09-Al-Salam Mall",
+      "11-Jouri Mall", "12-Al_Hamra Mall", "13-Al-Yasmin Mall", "14-Al Kamal Mall", "15-Riyadh Othaim Mall",
+      "16-Ehsa Othaim Mall", "17-Arar Othaim Mall", "18-Al_Khayyat Center", "19-Hail Othaim Mall",
+      "20-Sitten Street Makkah", "21-Abha Al_Rashid Mall New", "22-Tabuk Park", "23-Alia Mall Madinah",
+      "24-Yanbu Dana Mall", "25-Rabwa Othaim Mall", "26-Al-Noor Mall Madinah", "27-Dhahran Mall khobar",
+      "28-Al Nakheel Mall Dammam", "29-Al Nakheel Mall Riyadh", "30-Tala Mall Riyadh", "32-Atyaf Mall Riyadh",
+      "36-Al jubail Mall", "38-Al_Riyadh Park", "39-Salam Mall Riyadh", "40-Hayat Mall Riyad", "41-Khamis Avenue",
+      "42-Dareen Mall Dammam", "43-Mujan Park", "44-Al-Jouf Center", "45- Riyadh Gallery Mall", "46-Khaleej Mall Riyadh",
+      "47-Al-Nakheel Plaza", "48 - Jeddah Park", "49-AlAhsa Mall", "50-Meem Plaza Riyadh", "51-Park Avenue Riyadh",
+      "52-Al_Baha Mall", "53-Al Basateen Mall", "54-THE VILLAGE", "55- Jabl Omar", "56- Aziz Mall 2", "57-Sauq7"
+    ];
 
     function populateFilters() {
       const outlets = [...new Set(data.map(d => d.outlet))];
@@ -80,27 +115,23 @@
       else delete cart[code];
     }
 
-    function openSubmitDialog() {
-      const mallNames = [
-        "04-Andalos Mall", "05-Haifa Mall", "06-Red Sea Mall", "07-Arab Mall", "08-Makkah Mall", "09-Al-Salam Mall",
-        "11-Jouri Mall", "12-Al_Hamra Mall", "13-Al-Yasmin Mall", "14-Al Kamal Mall", "15-Riyadh Othaim Mall",
-        "16-Ehsa Othaim Mall", "17-Arar Othaim Mall", "18-Al_Khayyat Center", "19-Hail Othaim Mall",
-        "20-Sitten Street Makkah", "21-Abha Al_Rashid Mall New", "22-Tabuk Park", "23-Alia Mall Madinah",
-        "24-Yanbu Dana Mall", "25-Rabwa Othaim Mall", "26-Al-Noor Mall Madinah", "27-Dhahran Mall khobar",
-        "28-Al Nakheel Mall Dammam", "29-Al Nakheel Mall Riyadh", "30-Tala Mall Riyadh", "32-Atyaf Mall Riyadh",
-        "36-Al jubail Mall", "38-Al_Riyadh Park", "39-Salam Mall Riyadh", "40-Hayat Mall Riyad", "41-Khamis Avenue",
-        "42-Dareen Mall Dammam", "43-Mujan Park", "44-Al-Jouf Center", "45- Riyadh Gallery Mall", "46-Khaleej Mall Riyadh",
-        "47-Al-Nakheel Plaza", "48 - Jeddah Park", "49-AlAhsa Mall", "50-Meem Plaza Riyadh", "51-Park Avenue Riyadh",
-        "52-Al_Baha Mall", "53-Al Basateen Mall", "54-THE VILLAGE", "55- Jabl Omar", "56- Aziz Mall 2", "57-Sauq7"
-      ];
+    function openModal() {
+      mallSelect.innerHTML = mallNames.map(m => `<option value="${m}">${m}</option>`).join('');
+      orderModal.style.display = 'flex';
+    }
 
-      let options = mallNames.map(mall => `<option value="${mall}">${mall}</option>`).join('');
-      let selectHtml = `<select id='mallSelect'>${options}</select>`;
+    function closeModal() {
+      orderModal.style.display = 'none';
+    }
 
-      let mallName = prompt("اختر اسم المعرض:\n\n" + mallNames.join("\n"));
-
-      if (mallName && mallNames.includes(mallName)) generateExcel(mallName);
-      else alert("رجاء اختر اسم معرض صحيح.");
+    function submitOrder() {
+      const mallName = mallSelect.value;
+      if (!mallName) {
+        alert("يرجى اختيار معرض صحيح!");
+        return;
+      }
+      closeModal();
+      generateExcel(mallName);
     }
 
     function generateExcel(mallName) {
