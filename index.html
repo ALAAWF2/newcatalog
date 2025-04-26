@@ -2,62 +2,20 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>جدول البضاعة</title>
+  <script src="https://cdn.sheetjs.com/xlsx-0.19.2/package/dist/xlsx.full.min.js"></script>
   <style>
-    body {
-      font-family: Arial;
-      background: #fff8f0;
-      padding: 20px;
-    }
-    h1 {
-      text-align: center;
-      color: #e67e22;
-    }
+    body { font-family: Arial; background: #fff8f0; padding: 20px; }
+    h1 { text-align: center; color: #e67e22; }
     select, button, input[type='number'], input[type='text'] {
-      margin: 5px;
-      padding: 8px;
-      font-size: 14px;
-      border-radius: 5px;
-      border: 1px solid #ccc;
+      margin: 5px; padding: 8px; font-size: 14px; border-radius: 5px; border: 1px solid #ccc;
     }
-    .filters {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    .products {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-      gap: 20px;
-    }
-    .product {
-      background: white;
-      padding: 15px;
-      border-radius: 10px;
-      border: 1px solid #f0c79b;
-      box-shadow: 0 2px 5px rgba(230, 126, 34, 0.1);
-      text-align: center;
-    }
-    .product img {
-      width: 100%;
-      height: 150px;
-      object-fit: contain;
-      margin-bottom: 10px;
-      border-radius: 8px;
-      background-color: #fff0e0;
-    }
-    .order-btn {
-      background: #e67e22;
-      color: white;
-      border: none;
-      padding: 10px;
-      border-radius: 5px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-    .order-btn:hover {
-      background: #cf711c;
-    }
+    .filters { text-align: center; margin-bottom: 20px; }
+    .products { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
+    .product { background: white; padding: 15px; border-radius: 10px; border: 1px solid #f0c79b; box-shadow: 0 2px 5px rgba(230, 126, 34, 0.1); text-align: center; }
+    .product img { width: 100%; height: 150px; object-fit: contain; margin-bottom: 10px; border-radius: 8px; background-color: #fff0e0; }
+    .order-btn { background: #e67e22; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+    .order-btn:hover { background: #cf711c; }
   </style>
 </head>
 <body>
@@ -71,7 +29,7 @@
       <select id="categoryFilter"></select>
     </label>
     <input type="text" id="searchInput" placeholder="ابحث بالـ Alias..." oninput="renderProducts()" />
-    <button class="order-btn" onclick="downloadCSV()">تحميل الطلب</button>
+    <button class="order-btn" onclick="openSubmitDialog()">ارسال الطلبية</button>
   </div>
 
   <div class="products" id="productContainer"></div>
@@ -83,7 +41,6 @@
     const warehouseFilter = document.getElementById('warehouseFilter');
     const categoryFilter = document.getElementById('categoryFilter');
     const productContainer = document.getElementById('productContainer');
-    const searchInput = document.getElementById('searchInput');
 
     function populateFilters() {
       const outlets = [...new Set(data.map(d => d.outlet))];
@@ -96,7 +53,7 @@
     function renderProducts() {
       const outlet = warehouseFilter.value;
       const category = categoryFilter.value;
-      const searchTerm = searchInput.value.trim().toLowerCase();
+      const searchTerm = document.getElementById('searchInput').value.trim().toLowerCase();
 
       const filtered = data.filter(d =>
         d.stock > 20 &&
@@ -113,23 +70,53 @@
           <p><strong>الكود:</strong> ${d.code}</p>
           <p><strong>Alias:</strong> ${d.alias ?? '—'}</p>
           <p>الكمية المتوفرة: ${d.stock}</p>
-          <input type="number" min="1" placeholder="الكمية المطلوبة" onchange="addToCart('${d.code}', this.value)">
+          <input type="number" min="1" placeholder="الكمية المطلوبة" onchange="addToCart('${d.code}', '${d.name}', this.value)">
         </div>
       `).join('');
     }
 
-    function addToCart(code, qty) {
-      if (qty && parseInt(qty) > 0) cart[code] = qty;
+    function addToCart(code, name, qty) {
+      if (qty && parseInt(qty) > 0) cart[code] = { name, qty };
       else delete cart[code];
     }
 
-    function downloadCSV() {
-      const rows = Object.entries(cart).map(([code, qty]) => `${code},${qty}`).join('\n');
-      const blob = new Blob([rows], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = 'order.csv';
-      link.click();
+    function openSubmitDialog() {
+      const mallNames = [
+        "04-Andalos Mall", "05-Haifa Mall", "06-Red Sea Mall", "07-Arab Mall", "08-Makkah Mall", "09-Al-Salam Mall",
+        "11-Jouri Mall", "12-Al_Hamra Mall", "13-Al-Yasmin Mall", "14-Al Kamal Mall", "15-Riyadh Othaim Mall",
+        "16-Ehsa Othaim Mall", "17-Arar Othaim Mall", "18-Al_Khayyat Center", "19-Hail Othaim Mall",
+        "20-Sitten Street Makkah", "21-Abha Al_Rashid Mall New", "22-Tabuk Park", "23-Alia Mall Madinah",
+        "24-Yanbu Dana Mall", "25-Rabwa Othaim Mall", "26-Al-Noor Mall Madinah", "27-Dhahran Mall khobar",
+        "28-Al Nakheel Mall Dammam", "29-Al Nakheel Mall Riyadh", "30-Tala Mall Riyadh", "32-Atyaf Mall Riyadh",
+        "36-Al jubail Mall", "38-Al_Riyadh Park", "39-Salam Mall Riyadh", "40-Hayat Mall Riyad", "41-Khamis Avenue",
+        "42-Dareen Mall Dammam", "43-Mujan Park", "44-Al-Jouf Center", "45- Riyadh Gallery Mall", "46-Khaleej Mall Riyadh",
+        "47-Al-Nakheel Plaza", "48 - Jeddah Park", "49-AlAhsa Mall", "50-Meem Plaza Riyadh", "51-Park Avenue Riyadh",
+        "52-Al_Baha Mall", "53-Al Basateen Mall", "54-THE VILLAGE", "55- Jabl Omar", "56- Aziz Mall 2", "57-Sauq7"
+      ];
+
+      let options = mallNames.map(mall => `<option value="${mall}">${mall}</option>`).join('');
+      let selectHtml = `<select id='mallSelect'>${options}</select>`;
+
+      let mallName = prompt("اختر اسم المعرض:\n\n" + mallNames.join("\n"));
+
+      if (mallName && mallNames.includes(mallName)) generateExcel(mallName);
+      else alert("رجاء اختر اسم معرض صحيح.");
+    }
+
+    function generateExcel(mallName) {
+      const today = new Date().toISOString().split('T')[0];
+      const filename = `طلبية معرض - ${mallName} - ${today}.xlsx`;
+
+      const rows = [[mallName], [], ["Code", "Item Name", "Qty"]];
+      for (const [code, info] of Object.entries(cart)) {
+        rows.push([code, info.name, info.qty]);
+      }
+
+      const worksheet = XLSX.utils.aoa_to_sheet(rows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "طلبية");
+
+      XLSX.writeFile(workbook, filename);
     }
 
     warehouseFilter.addEventListener('change', renderProducts);
