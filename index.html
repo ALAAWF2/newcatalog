@@ -695,13 +695,11 @@
 const grouped = new Map();
 
 data.forEach(p => {
-  // نأخذ فقط المنتجات من المستودع الذي يخص المستخدم
   if (p.outlet !== userWarehouse) return;
 
-  const existing = grouped.get(p.code);
-
-  if (!existing) {
-    grouped.set(p.code, {
+  const code = p.code;
+  if (!grouped.has(code)) {
+    grouped.set(code, {
       ...p,
       stock: Number(p.stock) || 0,
       branches: {
@@ -709,17 +707,18 @@ data.forEach(p => {
       }
     });
   } else {
-    // نجمع القيم داخل نفس المستودع فقط
+    const existing = grouped.get(code);
+    // فقط نجمع الكميات بدون استبدال الكائن بالكامل
     existing.stock += Number(p.stock) || 0;
+
     const currentBranchQty = Number(p.branches?.[userMall] || 0);
     existing.branches[userMall] = (existing.branches[userMall] || 0) + currentBranchQty;
 
-    grouped.set(p.code, existing);
+    // لا نعيد تعيين p كاملاً حتى لو تغير الاسم أو غيره
   }
 });
 
 const uniqueProducts = Array.from(grouped.values());
-
 
 
 
