@@ -692,12 +692,13 @@
   const search = document.getElementById('searchInput').value.toLowerCase();
 
   // ✅ نجمع المنتجات حسب الكود، ونأخذ فقط المنتج اللي outlet حقه مطابق للمستودع
-  const grouped = {};
-  data.forEach(p => {
-    if (!grouped[p.code] && p.outlet === userWarehouse) {
-      grouped[p.code] = { ...p };
-    }
-  });
+const grouped = {};
+data.forEach(p => {
+  if (p.outlet === userWarehouse) {
+    grouped[p.code] = p; // كل مرة يستبدله ويضمن آخر قيمة واحدة فقط
+  }
+});
+
 
   // ✅ نحولها إلى مصفوفة
   const uniqueProducts = Object.values(grouped);
