@@ -686,7 +686,8 @@ function normalize(text) {
   return (text || "").toLowerCase().replace(/\s+/g, '').trim();
 }
 
-  function renderProducts() {
+  // ✅ تعديل وظيفة renderProducts لمنع تكرار المنتجات تمامًا حتى لو كان نفس الكود مكرر بنفس المستودع
+function renderProducts() {
   document.getElementById('loadingSpinner').style.display = 'block';
 
   const category = document.getElementById('categoryFilter').value;
@@ -694,60 +695,47 @@ function normalize(text) {
   const sortBy = document.getElementById('sortFilter').value;
   const search = document.getElementById('searchInput').value.toLowerCase();
 
- const userOutlet = normalize(userWarehouse);
-
-
+  const userOutlet = normalize(userWarehouse);
   const grouped = new Map();
 
-  data.forEach(p => {
-   const outlet = normalize(p.outlet);
+  const seenCodes = new Set();
 
+  data.forEach(p => {
+    const outlet = normalize(p.outlet);
+    const code = String(p.code).trim();
 
     // ✅ تصفية صارمة على المستودع الحالي فقط
     if (outlet !== userOutlet) return;
 
-   const code = String(p.code).trim();
-const key = `${code}_${outlet}`; // ← دمج الكود مع outlet
+    // ✅ تجنب تكرار الكود نهائيًا حتى لو في نفس المستودع
+    if (seenCodes.has(code)) return;
+    seenCodes.add(code);
 
-
- if (!grouped.has(key)) {
-  grouped.set(key, {
-    ...p,
-    stock: Number(p.stock) || 0,
-    branches: {
-      [userMall]: Number(p.branches?.[userMall] || 0)
-    }
-  });
-} else {
-  const existing = grouped.get(key);
-  existing.stock += Number(p.stock) || 0;
-  const currentBranchQty = Number(p.branches?.[userMall] || 0);
-  existing.branches[userMall] = (existing.branches[userMall] || 0) + currentBranchQty;
-}
-
+    grouped.set(code, {
+      ...p,
+      stock: Number(p.stock) || 0,
+      branches: {
+        [userMall]: Number(p.branches?.[userMall] || 0)
+      }
+    });
   });
 
   const uniqueProducts = Array.from(grouped.values());
 
+  filteredProducts = uniqueProducts.filter(product => {
+    if (category && product.category !== category) return false;
 
+    if (priceRange) {
+      const [min, max] = priceRange.split('-');
+      if (max && (product.price < parseInt(min) || product.price > parseInt(max))) return false;
+      if (!max && product.price < parseInt(min)) return false;
+    }
 
-  // ✅ نبدأ التصفية
- filteredProducts = uniqueProducts.filter(product => {
-  if (category && product.category !== category) return false;
+    if (search && !product.alias?.toLowerCase().includes(search) && !product.name.toLowerCase().includes(search)) return false;
 
-  if (priceRange) {
-    const [min, max] = priceRange.split('-');
-    if (max && (product.price < parseInt(min) || product.price > parseInt(max))) return false;
-    if (!max && product.price < parseInt(min)) return false;
-  }
+    return true;
+  });
 
-  if (search && !product.alias?.toLowerCase().includes(search) && !product.name.toLowerCase().includes(search)) return false;
-
-  return true;
-});
-
-
-  // ✅ الترتيب
   switch (sortBy) {
     case 'price-asc':
       filteredProducts.sort((a, b) => a.price - b.price);
@@ -777,6 +765,7 @@ const key = `${code}_${outlet}`; // ← دمج الكود مع outlet
   if (typeof updateSearchSuggestions === 'function') updateSearchSuggestions();
   if (typeof updateFavoriteButtons === 'function') updateFavoriteButtons();
 }
+
 
 
    function renderPage(page) {
