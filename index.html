@@ -682,6 +682,9 @@
       document.getElementById('categoryFilter').innerHTML = '<option value="">الكل</option>' + 
         categories.map(c => `<option value="${c}">${c}</option>`).join('');
     }
+function normalize(text) {
+  return (text || "").toLowerCase().replace(/\s+/g, '').trim();
+}
 
   function renderProducts() {
   document.getElementById('loadingSpinner').style.display = 'block';
@@ -691,12 +694,14 @@
   const sortBy = document.getElementById('sortFilter').value;
   const search = document.getElementById('searchInput').value.toLowerCase();
 
-  const userOutlet = (userWarehouse || "").trim().toLowerCase();
+ const userOutlet = normalize(userWarehouse);
+
 
   const grouped = new Map();
 
   data.forEach(p => {
-    const outlet = (p.outlet || "").trim().toLowerCase();
+   const outlet = normalize(p.outlet);
+
 
     // ✅ تصفية صارمة على المستودع الحالي فقط
     if (outlet !== userOutlet) return;
