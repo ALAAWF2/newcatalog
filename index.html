@@ -683,73 +683,71 @@
         categories.map(c => `<option value="${c}">${c}</option>`).join('');
     }
 
-    function renderProducts() {
-      document.getElementById('loadingSpinner').style.display = 'block';
-      
-      const category = document.getElementById('categoryFilter').value;
-      const priceRange = document.getElementById('priceFilter').value;
-      const sortBy = document.getElementById('sortFilter').value;
-      const search = document.getElementById('searchInput').value.toLowerCase();
-      
-      // تصفية المنتجات
-      filteredProducts = data.filter(product => {
-        // تصفية حسب التصنيف
-        if (category && product.category !== category) return false;
-        
-        // تصفية حسب نطاق السعر
-        if (priceRange) {
-          const [min, max] = priceRange.split('-');
-          if (max && (product.price < parseInt(min) || product.price > parseInt(max))) return false;
-          if (!max && product.price < parseInt(min)) return false;
-        }
-        
-        // تصفية حسب البحث
-        if (search && !product.alias?.toLowerCase().includes(search) && !product.name.toLowerCase().includes(search)) return false;
-        
-        return true;
-      });
-      
-      // ترتيب المنتجات
-      switch (sortBy) {
-        case 'price-asc':
-          filteredProducts.sort((a, b) => a.price - b.price);
-          break;
-        case 'price-desc':
-          filteredProducts.sort((a, b) => b.price - a.price);
-          break;
-        case 'sales-desc':
-          filteredProducts.sort((a, b) => b.sales - a.sales);
-          break;
-        case 'stock-desc':
-          filteredProducts.sort((a, b) => b.stock - a.stock);
-          break;
-        case 'alias-asc':
-          filteredProducts.sort((a, b) => (a.alias || '').localeCompare(b.alias || ''));
-          break;
-      }
-      
-      // حساب إجمالي المبيعات
-      const totalSales = filteredProducts.reduce((sum, p) => sum + p.sales, 0);
-      document.getElementById('totalSales').textContent = `إجمالي المبيعات: ${totalSales} قطعة`;
-      
-      // عرض المنتجات في الصفحة الحالية
-      renderPage(currentPage);
-      
-      // تحديث التصفح
-      updatePagination();
-      
-      document.getElementById('loadingSpinner').style.display = 'none';
-      
-      // تحديث اقتراحات البحث إذا كانت الوظيفة موجودة
-      if (typeof updateSearchSuggestions === 'function') {
-        updateSearchSuggestions();
-      }
-      
-      // تحديث أزرار المفضلة إذا كانت الوظيفة موجودة
-      if (typeof updateFavoriteButtons === 'function') {
-        updateFavoriteButtons();
-      }
+   function renderProducts() {
+  document.getElementById('loadingSpinner').style.display = 'block';
+
+  const category = document.getElementById('categoryFilter').value;
+  const priceRange = document.getElementById('priceFilter').value;
+  const sortBy = document.getElementById('sortFilter').value;
+  const search = document.getElementById('searchInput').value.toLowerCase();
+
+  // ✅ نجمع المنتجات حسب الكود، ونأخذ فقط المنتج اللي outlet حقه مطابق للمستودع
+  const grouped = {};
+  data.forEach(p => {
+    if (!grouped[p.code] && p.outlet === userWarehouse) {
+      grouped[p.code] = { ...p };
     }
+  });
+
+  // ✅ نحولها إلى مصفوفة
+  const uniqueProducts = Object.values(grouped);
+
+  // ✅ نبدأ التصفية
+  filteredProducts = uniqueProducts.filter(product => {
+    if (category && product.category !== category) return false;
+
+    if (priceRange) {
+      const [min, max] = priceRange.split('-');
+      if (max && (product.price < parseInt(min) || product.price > parseInt(max))) return false;
+      if (!max && product.price < parseInt(min)) return false;
+    }
+
+    if (search && !product.alias?.toLowerCase().includes(search) && !product.name.toLowerCase().includes(search)) return false;
+
+    return true;
+  });
+
+  // ✅ الترتيب
+  switch (sortBy) {
+    case 'price-asc':
+      filteredProducts.sort((a, b) => a.price - b.price);
+      break;
+    case 'price-desc':
+      filteredProducts.sort((a, b) => b.price - a.price);
+      break;
+    case 'sales-desc':
+      filteredProducts.sort((a, b) => b.sales - a.sales);
+      break;
+    case 'stock-desc':
+      filteredProducts.sort((a, b) => b.stock - a.stock);
+      break;
+    case 'alias-asc':
+      filteredProducts.sort((a, b) => (a.alias || '').localeCompare(b.alias || ''));
+      break;
+  }
+
+  const totalSales = filteredProducts.reduce((sum, p) => sum + p.sales, 0);
+  document.getElementById('totalSales').textContent = `إجمالي المبيعات: ${totalSales} قطعة`;
+
+  renderPage(currentPage);
+  updatePagination();
+
+  document.getElementById('loadingSpinner').style.display = 'none';
+
+  if (typeof updateSearchSuggestions === 'function') updateSearchSuggestions();
+  if (typeof updateFavoriteButtons === 'function') updateFavoriteButtons();
+}
+
 
    function renderPage(page) {
   const container = document.getElementById('productContainer');
