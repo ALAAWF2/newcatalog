@@ -695,11 +695,9 @@
 const grouped = new Map();
 
 data.forEach(p => {
-  // نأخذ فقط الصفوف اللي تطابق المستودع
   if (p.outlet !== userWarehouse) return;
 
-  // نتأكد أن الكود هو string دائمًا لتجنب أخطاء المفاتيح
-  const code = String(p.code);
+  const code = String(p.code).trim();
 
   if (!grouped.has(code)) {
     grouped.set(code, {
@@ -712,14 +710,13 @@ data.forEach(p => {
   } else {
     const existing = grouped.get(code);
     existing.stock += Number(p.stock) || 0;
+
     const currentBranchQty = Number(p.branches?.[userMall] || 0);
     existing.branches[userMall] = (existing.branches[userMall] || 0) + currentBranchQty;
-
-    grouped.set(code, existing);
   }
 });
 
-const uniqueProducts = Array.from(grouped.values());
+const filteredProducts = Array.from(grouped.values());
 
 
 
