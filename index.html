@@ -698,15 +698,18 @@ function renderProducts() {
   const userOutlet = normalize(userWarehouse);
   const grouped = new Map();
 
+  // ✅ تجميع المنتجات من نفس المستودع فقط
   data.forEach(p => {
     const outlet = normalize(p.outlet);
     const code = String(p.code).trim();
 
-    // ✅ تجاهل إذا مش من مستودع المستخدم
     if (outlet !== userOutlet) return;
 
-    // ✅ تجميع على مستوى الكود داخل المستودع فقط
-    if (!grouped.has(code)) {
+    if (grouped.has(code)) {
+      const existing = grouped.get(code);
+      existing.stock += Number(p.stock) || 0;
+      existing.branches[userMall] = (existing.branches[userMall] || 0) + Number(p.branches?.[userMall] || 0);
+    } else {
       grouped.set(code, {
         ...p,
         stock: Number(p.stock) || 0,
@@ -714,15 +717,14 @@ function renderProducts() {
           [userMall]: Number(p.branches?.[userMall] || 0)
         }
       });
-    } else {
-      const existing = grouped.get(code);
-      existing.stock += Number(p.stock) || 0;
-      existing.branches[userMall] = (existing.branches[userMall] || 0) + Number(p.branches?.[userMall] || 0);
     }
   });
 
+  // تحويل النتائج المجمعة إلى مصفوفة
   const uniqueProducts = Array.from(grouped.values());
 
+  // ✅ فلترة حسب التصنيف والسعر والبحث ومنع التكرار حسب الكود
+  const filteredSeen = new Set();
   filteredProducts = uniqueProducts.filter(product => {
     if (category && product.category !== category) return false;
 
@@ -732,20 +734,39 @@ function renderProducts() {
       if (!max && product.price < parseInt(min)) return false;
     }
 
-    if (search && !product.alias?.toLowerCase().includes(search) && !product.name.toLowerCase().includes(search)) return false;
+    if (
+      search &&
+      !product.alias?.toLowerCase().includes(search) &&
+      !product.name.toLowerCase().includes(search)
+    ) return false;
+
+    // ✅ استبعاد المنتجات المكررة
+    if (filteredSeen.has(product.code)) return false;
+    filteredSeen.add(product.code);
 
     return true;
   });
 
-  // ✅ الترتيب
+  // ✅ الترتيب حسب الاختيار
   switch (sortBy) {
-    case 'price-asc': filteredProducts.sort((a, b) => a.price - b.price); break;
-    case 'price-desc': filteredProducts.sort((a, b) => b.price - a.price); break;
-    case 'sales-desc': filteredProducts.sort((a, b) => b.sales - a.sales); break;
-    case 'stock-desc': filteredProducts.sort((a, b) => b.stock - a.stock); break;
-    case 'alias-asc': filteredProducts.sort((a, b) => (a.alias || '').localeCompare(b.alias || '')); break;
+    case 'price-asc':
+      filteredProducts.sort((a, b) => a.price - b.price);
+      break;
+    case 'price-desc':
+      filteredProducts.sort((a, b) => b.price - a.price);
+      break;
+    case 'sales-desc':
+      filteredProducts.sort((a, b) => b.sales - a.sales);
+      break;
+    case 'stock-desc':
+      filteredProducts.sort((a, b) => b.stock - a.stock);
+      break;
+    case 'alias-asc':
+      filteredProducts.sort((a, b) => (a.alias || '').localeCompare(b.alias || ''));
+      break;
   }
 
+  // ✅ إظهار إجمالي المبيعات
   const totalSales = filteredProducts.reduce((sum, p) => sum + p.sales, 0);
   document.getElementById('totalSales').textContent = `إجمالي المبيعات: ${totalSales} قطعة`;
 
@@ -757,6 +778,7 @@ function renderProducts() {
   if (typeof updateSearchSuggestions === 'function') updateSearchSuggestions();
   if (typeof updateFavoriteButtons === 'function') updateFavoriteButtons();
 }
+
 
 
 
