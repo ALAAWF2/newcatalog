@@ -705,21 +705,26 @@ function renderProducts() {
     const code = String(p.code).trim();
 
     // تجاهل إذا المنتج ليس من مستودع المستخدم
-    if (outlet !== userOutlet) return;
+   if (normalize(outlet) !== userOutlet) return;
 
-    // إذا شفنا الكود من قبل، نتجاهله تمامًا
-    if (seenCodes.has(code)) return;
+if (grouped.has(code)) {
+  const existing = grouped.get(code);
+  existing.stock += Number(p.stock) || 0;
+  existing.branches[userMall] = (existing.branches[userMall] || 0) + Number(p.branches?.[userMall] || 0);
+} else {
+  grouped.set(code, {
+    ...p,
+    stock: Number(p.stock) || 0,
+    branches: {
+      [userMall]: Number(p.branches?.[userMall] || 0)
+    }
+  });
+}
+
     seenCodes.add(code);
 
     // نضيف المنتج إلى مجموعة المنتجات الفريدة
-    grouped.set(code, {
-      ...p,
-      stock: Number(p.stock) || 0,
-      branches: {
-        [userMall]: Number(p.branches?.[userMall] || 0)
-      }
-    });
-  });
+
 
   // استخراج المنتجات المجمعة
   const uniqueProducts = Array.from(grouped.values());
