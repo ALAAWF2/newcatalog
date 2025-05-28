@@ -706,22 +706,25 @@ function normalize(text) {
     // ✅ تصفية صارمة على المستودع الحالي فقط
     if (outlet !== userOutlet) return;
 
-    const code = String(p.code).trim();
+   const code = String(p.code).trim();
+const key = `${code}_${outlet}`; // ← دمج الكود مع outlet
 
-    if (!grouped.has(code)) {
-      grouped.set(code, {
-        ...p,
-        stock: Number(p.stock) || 0,
-        branches: {
-          [userMall]: Number(p.branches?.[userMall] || 0)
-        }
-      });
-    } else {
-      const existing = grouped.get(code);
-      existing.stock += Number(p.stock) || 0;
-      const currentBranchQty = Number(p.branches?.[userMall] || 0);
-      existing.branches[userMall] = (existing.branches[userMall] || 0) + currentBranchQty;
+
+ if (!grouped.has(key)) {
+  grouped.set(key, {
+    ...p,
+    stock: Number(p.stock) || 0,
+    branches: {
+      [userMall]: Number(p.branches?.[userMall] || 0)
     }
+  });
+} else {
+  const existing = grouped.get(key);
+  existing.stock += Number(p.stock) || 0;
+  const currentBranchQty = Number(p.branches?.[userMall] || 0);
+  existing.branches[userMall] = (existing.branches[userMall] || 0) + currentBranchQty;
+}
+
   });
 
   const uniqueProducts = Array.from(grouped.values());
