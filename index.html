@@ -692,31 +692,55 @@
   const search = document.getElementById('searchInput').value.toLowerCase();
 
   // ✅ نجمع المنتجات حسب الكود، ونأخذ فقط المنتج اللي outlet حقه مطابق للمستودع
-const grouped = {};
+const grouped = new Map();
+
 data.forEach(p => {
-  if (p.outlet === userWarehouse) {
-    grouped[p.code] = p; // كل مرة يستبدله ويضمن آخر قيمة واحدة فقط
+  if (p.outlet !== userWarehouse) return;
+
+  if (!grouped.has(p.code)) {
+    // أول مرة نشوف المنتج – نحفظه
+    grouped.set(p.code, {
+      ...p,
+      stock: Number(p.stock) || 0,
+      branches: {
+        [userMall]: Number(p.branches?.[userMall] || 0)
+      }
+    });
+  } else {
+    // المنتج موجود مسبقًا – نجمع القيم
+    const existing = grouped.get(p.code);
+    existing.stock += Number(p.stock) || 0;
+
+    // جمع الكمية داخل المعرض المرتبط
+    const currentBranchQty = Number(p.branches?.[userMall] || 0);
+    existing.branches[userMall] = (existing.branches[userMall] || 0) + currentBranchQty;
+
+    // نحدثه داخل الماب
+    grouped.set(p.code, existing);
   }
 });
 
+const uniqueProducts = Array.from(grouped.values());
 
-  // ✅ نحولها إلى مصفوفة
-  const uniqueProducts = Object.values(grouped);
+
+
+
 
   // ✅ نبدأ التصفية
-  filteredProducts = uniqueProducts.filter(product => {
-    if (category && product.category !== category) return false;
+ filteredProducts = uniqueProducts.filter(product => {
+  if (category && product.category !== category) return false;
 
-    if (priceRange) {
-      const [min, max] = priceRange.split('-');
-      if (max && (product.price < parseInt(min) || product.price > parseInt(max))) return false;
-      if (!max && product.price < parseInt(min)) return false;
-    }
+  if (priceRange) {
+    const [min, max] = priceRange.split('-');
+    if (max && (product.price < parseInt(min) || product.price > parseInt(max))) return false;
+    if (!max && product.price < parseInt(min)) return false;
+  }
 
-    if (search && !product.alias?.toLowerCase().includes(search) && !product.name.toLowerCase().includes(search)) return false;
+  if (search && !product.alias?.toLowerCase().includes(search) && !product.name.toLowerCase().includes(search)) return false;
 
-    return true;
-  });
+  return true;
+});
+
 
   // ✅ الترتيب
   switch (sortBy) {
