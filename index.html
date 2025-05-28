@@ -683,7 +683,7 @@
         categories.map(c => `<option value="${c}">${c}</option>`).join('');
     }
 
-   function renderProducts() {
+  function renderProducts() {
   document.getElementById('loadingSpinner').style.display = 'block';
 
   const category = document.getElementById('categoryFilter').value;
@@ -691,35 +691,35 @@
   const sortBy = document.getElementById('sortFilter').value;
   const search = document.getElementById('searchInput').value.toLowerCase();
 
-  // ✅ نجمع المنتجات حسب الكود، ونأخذ فقط المنتج اللي outlet حقه مطابق للمستودع
-const grouped = new Map();
-
-data.forEach(p => {
-  const outlet = (p.outlet || "").trim().toLowerCase();
   const userOutlet = (userWarehouse || "").trim().toLowerCase();
 
-  if (outlet !== userOutlet) return;
+  const grouped = new Map();
 
-  const code = String(p.code).trim();
+  data.forEach(p => {
+    const outlet = (p.outlet || "").trim().toLowerCase();
 
-  if (!grouped.has(code)) {
-    grouped.set(code, {
-      ...p,
-      stock: Number(p.stock) || 0,
-      branches: {
-        [userMall]: Number(p.branches?.[userMall] || 0)
-      }
-    });
-  } else {
-    const existing = grouped.get(code);
-    existing.stock += Number(p.stock) || 0;
-    const currentBranchQty = Number(p.branches?.[userMall] || 0);
-    existing.branches[userMall] = (existing.branches[userMall] || 0) + currentBranchQty;
-  }
-});
+    // ✅ تصفية صارمة على المستودع الحالي فقط
+    if (outlet !== userOutlet) return;
 
-const uniqueProducts = Array.from(grouped.values());
+    const code = String(p.code).trim();
 
+    if (!grouped.has(code)) {
+      grouped.set(code, {
+        ...p,
+        stock: Number(p.stock) || 0,
+        branches: {
+          [userMall]: Number(p.branches?.[userMall] || 0)
+        }
+      });
+    } else {
+      const existing = grouped.get(code);
+      existing.stock += Number(p.stock) || 0;
+      const currentBranchQty = Number(p.branches?.[userMall] || 0);
+      existing.branches[userMall] = (existing.branches[userMall] || 0) + currentBranchQty;
+    }
+  });
+
+  const uniqueProducts = Array.from(grouped.values());
 
 
 
