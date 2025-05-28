@@ -695,7 +695,10 @@
 const grouped = new Map();
 
 data.forEach(p => {
-  if (p.outlet !== userWarehouse) return;
+  const outlet = (p.outlet || "").trim().toLowerCase();
+  const userOutlet = (userWarehouse || "").trim().toLowerCase();
+
+  if (outlet !== userOutlet) return;
 
   const code = String(p.code).trim();
 
@@ -710,13 +713,13 @@ data.forEach(p => {
   } else {
     const existing = grouped.get(code);
     existing.stock += Number(p.stock) || 0;
-
     const currentBranchQty = Number(p.branches?.[userMall] || 0);
     existing.branches[userMall] = (existing.branches[userMall] || 0) + currentBranchQty;
   }
 });
 
-const filteredProducts = Array.from(grouped.values());
+const uniqueProducts = Array.from(grouped.values());
+
 
 
 
