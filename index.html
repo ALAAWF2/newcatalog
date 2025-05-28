@@ -698,18 +698,15 @@ function renderProducts() {
   const userOutlet = normalize(userWarehouse);
   const grouped = new Map();
 
-  // ✅ تجميع المنتجات من نفس المستودع فقط
   data.forEach(p => {
     const outlet = normalize(p.outlet);
     const code = String(p.code).trim();
 
+    // ✅ عرض المنتج فقط إذا outlet يطابق المستودع المرتبط بالمعرض الحالي
     if (outlet !== userOutlet) return;
 
-    if (grouped.has(code)) {
-      const existing = grouped.get(code);
-      existing.stock += Number(p.stock) || 0;
-      existing.branches[userMall] = (existing.branches[userMall] || 0) + Number(p.branches?.[userMall] || 0);
-    } else {
+    // ✅ تجميع حسب الكود فقط مرة واحدة
+    if (!grouped.has(code)) {
       grouped.set(code, {
         ...p,
         stock: Number(p.stock) || 0,
@@ -720,10 +717,8 @@ function renderProducts() {
     }
   });
 
-  // تحويل النتائج المجمعة إلى مصفوفة
   const uniqueProducts = Array.from(grouped.values());
 
-  // ✅ فلترة حسب التصنيف والسعر والبحث ومنع التكرار حسب الكود
   const filteredSeen = new Set();
   filteredProducts = uniqueProducts.filter(product => {
     if (category && product.category !== category) return false;
@@ -740,14 +735,12 @@ function renderProducts() {
       !product.name.toLowerCase().includes(search)
     ) return false;
 
-    // ✅ استبعاد المنتجات المكررة
     if (filteredSeen.has(product.code)) return false;
     filteredSeen.add(product.code);
 
     return true;
   });
 
-  // ✅ الترتيب حسب الاختيار
   switch (sortBy) {
     case 'price-asc':
       filteredProducts.sort((a, b) => a.price - b.price);
@@ -766,7 +759,6 @@ function renderProducts() {
       break;
   }
 
-  // ✅ إظهار إجمالي المبيعات
   const totalSales = filteredProducts.reduce((sum, p) => sum + p.sales, 0);
   document.getElementById('totalSales').textContent = `إجمالي المبيعات: ${totalSales} قطعة`;
 
@@ -778,7 +770,6 @@ function renderProducts() {
   if (typeof updateSearchSuggestions === 'function') updateSearchSuggestions();
   if (typeof updateFavoriteButtons === 'function') updateFavoriteButtons();
 }
-
 
 
 
