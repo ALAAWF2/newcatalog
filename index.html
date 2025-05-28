@@ -697,20 +697,21 @@ function renderProducts() {
 
   const userOutlet = normalize(userWarehouse);
   const grouped = new Map();
-
   const seenCodes = new Set();
 
+  // ✅ تجميع المنتجات من المستودع الحالي فقط وتفادي التكرار
   data.forEach(p => {
     const outlet = normalize(p.outlet);
     const code = String(p.code).trim();
 
-    // ✅ تصفية صارمة على المستودع الحالي فقط
+    // تجاهل إذا المنتج ليس من مستودع المستخدم
     if (outlet !== userOutlet) return;
 
-    // ✅ تجنب تكرار الكود نهائيًا حتى لو في نفس المستودع
+    // إذا شفنا الكود من قبل، نتجاهله تمامًا
     if (seenCodes.has(code)) return;
     seenCodes.add(code);
 
+    // نضيف المنتج إلى مجموعة المنتجات الفريدة
     grouped.set(code, {
       ...p,
       stock: Number(p.stock) || 0,
@@ -720,8 +721,10 @@ function renderProducts() {
     });
   });
 
+  // استخراج المنتجات المجمعة
   const uniqueProducts = Array.from(grouped.values());
 
+  // ✅ فلترة حسب التصنيف والسعر والبحث
   filteredProducts = uniqueProducts.filter(product => {
     if (category && product.category !== category) return false;
 
@@ -736,6 +739,7 @@ function renderProducts() {
     return true;
   });
 
+  // ✅ الترتيب حسب الفلتر المختار
   switch (sortBy) {
     case 'price-asc':
       filteredProducts.sort((a, b) => a.price - b.price);
@@ -754,17 +758,21 @@ function renderProducts() {
       break;
   }
 
+  // ✅ حساب إجمالي المبيعات
   const totalSales = filteredProducts.reduce((sum, p) => sum + p.sales, 0);
   document.getElementById('totalSales').textContent = `إجمالي المبيعات: ${totalSales} قطعة`;
 
+  // عرض الصفحة وتحديث الصفحات
   renderPage(currentPage);
   updatePagination();
 
   document.getElementById('loadingSpinner').style.display = 'none';
 
+  // تحديث اقتراحات البحث والأزرار إذا متوفرة
   if (typeof updateSearchSuggestions === 'function') updateSearchSuggestions();
   if (typeof updateFavoriteButtons === 'function') updateFavoriteButtons();
 }
+
 
 
 
