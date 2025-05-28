@@ -751,68 +751,69 @@
       }
     }
 
-      function renderPage(page) {
-      const container = document.getElementById('productContainer');
-      const start = (page - 1) * productsPerPage;
-      const end = Math.min(start + productsPerPage, filteredProducts.length);
-      const pageProducts = filteredProducts.slice(start, end);
+   function renderPage(page) {
+  const container = document.getElementById('productContainer');
+  const start = (page - 1) * productsPerPage;
+  const end = Math.min(start + productsPerPage, filteredProducts.length);
+  const pageProducts = filteredProducts.slice(start, end);
 
-      container.innerHTML = '';
+  container.innerHTML = '';
 
-      if (pageProducts.length === 0) {
-        container.innerHTML = '<div class="empty-state"><i class="fas fa-search"></i><p>لا توجد منتجات تطابق معايير البحث</p></div>';
-        return;
-      }
+  if (pageProducts.length === 0) {
+    container.innerHTML = '<div class="empty-state"><i class="fas fa-search"></i><p>لا توجد منتجات تطابق معايير البحث</p></div>';
+    return;
+  }
 
-      let favorites = [];
-      if (auth.currentUser) {
-        favorites = JSON.parse(localStorage.getItem(`favorites_${auth.currentUser.uid}`)) || [];
-      }
+  let favorites = [];
+  if (auth.currentUser) {
+    favorites = JSON.parse(localStorage.getItem(`favorites_${auth.currentUser.uid}`)) || [];
+  }
 
-      pageProducts.forEach(product => {
-        const isInCart = cart[product.code];
-        const cartQty = isInCart ? cart[product.code].qty : 0;
-        const isLowStock = product.stock < 10;
-        const isFavorite = favorites.includes(product.code);
+  pageProducts.forEach(product => {
+    const isInCart = cart[product.code];
+    const cartQty = isInCart ? cart[product.code].qty : 0;
+    const isLowStock = product.stock < 10;
+    const isFavorite = favorites.includes(product.code);
 
-        const imagePath = `images/${product.code}.jpg`;
+    const imagePath = `images/${product.code}.jpg`;
 
-        const productElement = document.createElement('div');
-        productElement.className = 'product-card';
-        productElement.innerHTML = `
-          <div class="product-image">
-            <img src="${imagePath}"
-                 alt="${product.name}"
-                 onclick="openProductModal(${JSON.stringify(product).replace(/"/g, '&quot;')})"
-                 onerror="this.onerror=null;this.src='images/no-image.png';this.classList.add('error')">
-            <div class="product-overlay">
-              <button class="favorite-btn ${isFavorite ? 'active' : ''}" data-code="${product.code}" onclick="toggleFavorite('${product.code}')">
-                <i class="fa${isFavorite ? 's' : 'r'} fa-heart"></i>
-              </button>
-              <button class="share-btn" onclick="shareProduct('${product.code}')">
-                <i class="fas fa-share-alt share-icon"></i>
-              </button>
-            </div>
-          </div>
-          <div class="product-body">
-            <h4 class="product-title">${product.name}</h4>
-            <p class="product-meta">الكود: ${product.code}</p>
-            <p class="product-meta">Alias: ${product.alias || '—'}</p>
-            <div class="product-price">${product.price} ريال</div>
-            <p class="product-stock ${isLowStock ? 'low' : ''}">المخزون: ${product.stock} قطعة</p>
-          </div>
-          <div class="product-footer">
-            <input type="number" min="1" max="${product.stock}" value="${cartQty || 1}" id="qty-${product.code}" class="product-quantity">
-            <button class="btn ${isInCart ? 'btn-success' : ''}" onclick="addToCart('${product.code}')">
-              <i class="fas fa-cart-plus"></i>
-              ${isInCart ? 'تحديث الكمية' : 'إضافة للطلبية'}
-            </button>
-          </div>
-        `;
+    const productElement = document.createElement('div');
+    productElement.className = 'product-card';
+    productElement.innerHTML = `
+      <div class="product-image">
+        <img src="${imagePath}"
+             alt="${product.name}"
+             onclick="openProductModal(${JSON.stringify(product).replace(/"/g, '&quot;')})"
+             onerror="this.onerror=null;this.src='images/no-image.png';this.classList.add('error')">
+        <div class="product-overlay">
+          <button class="favorite-btn ${isFavorite ? 'active' : ''}" data-code="${product.code}" onclick="toggleFavorite('${product.code}')">
+            <i class="fa${isFavorite ? 's' : 'r'} fa-heart"></i>
+          </button>
+          <button class="share-btn" onclick="shareProduct('${product.code}')">
+            <i class="fas fa-share-alt share-icon"></i>
+          </button>
+        </div>
+      </div>
+      <div class="product-body">
+        <h4 class="product-title">${product.name}</h4>
+        <p class="product-meta">الكود: ${product.code}</p>
+        <p class="product-meta">Alias: ${product.alias || '—'}</p>
+        <div class="product-price">${product.price} ريال</div>
+        <p class="product-stock ${isLowStock ? 'low' : ''}">المستودع: ${product.stock} | المعرض: ${product.branches?.[userMall] ?? 0}</p>
+      </div>
+      <div class="product-footer">
+        <input type="number" min="1" max="${product.stock}" value="${cartQty || 1}" id="qty-${product.code}" class="product-quantity">
+        <button class="btn ${isInCart ? 'btn-success' : ''}" onclick="addToCart('${product.code}')">
+          <i class="fas fa-cart-plus"></i>
+          ${isInCart ? 'تحديث الكمية' : 'إضافة للطلبية'}
+        </button>
+      </div>
+    `;
 
-        container.appendChild(productElement);
-      });
-    }
+    container.appendChild(productElement);
+  });
+}
+
 
 
 
